@@ -53,6 +53,11 @@ to enhance the methodology and address current limitations.
 
 ## Test output
 
+Test output
+
 ![Test output](test_output.png)
+
+
+Test output knn
 
 ![Test output knn](test_output_knn.png)
