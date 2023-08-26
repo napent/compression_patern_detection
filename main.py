@@ -33,7 +33,7 @@ plt.figure(figsize=(15, 12))
 # Subplot 1: Synthetic close price data with NCD-based detection highlighted
 plt.subplot(4, 1, 1)
 plt.plot(asset_price, label="Synthetic Close Price", color='blue')
-threshold = 0.4
+threshold = 0.75
 for i, ncd in enumerate(NCD):
     if ncd < threshold:
         plt.axvspan(i + 1, i + window_size + 1, color='yellow', alpha=0.4)  # +1 due to percentage change representation

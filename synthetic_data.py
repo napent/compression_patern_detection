@@ -17,11 +17,11 @@ def generate_variable_head_and_shoulders(freq_multiplier=1.0, amplitude_multipli
     return interpolated_pattern * amplitude_multiplier
 
 
-def convert_to_percentage_change(data):
+def convert_to_difference(data):
     percentage_change = []
     for i in range(1, len(data)):
         if data[i - 1] != 0:
-            percentage_change.append((data[i] - data[i - 1]) / data[i - 1])
+            percentage_change.append((data[i] - data[i - 1]))
         else:
             percentage_change.append(0)
     return np.array(percentage_change)
@@ -42,11 +42,47 @@ additional_patterns = {
 # Merge the original and additional reference patterns
 all_reference_patterns = {
     "Original": generate_accurate_head_and_shoulders(),
-    # **additional_patterns
+    **additional_patterns
 }
 
 
 def generate_synthetic_data_with_trend():
+    np.random.seed(42)  # for reproducibility
+
+    # 1. Random Walk with Drift
+    drift = 0.02  # slight upward trend
+    random_walk = [0]
+    for i in range(1, 1000):
+        movement = drift + 0.3 * np.random.randn()  # reducing the randomness to make the pattern more discernible
+        value = random_walk[-1] + movement
+        random_walk.append(value)
+
+    # 2. Varying Volatility but reduced to ensure the pattern is discernible
+    volatilities = 0.3 * (np.abs(np.sin(np.linspace(0, 10, 1000))) + 0.5)
+    noise = np.random.randn(1000) * volatilities
+
+    # Combine the random walk and noise
+    asset_price = np.array(random_walk) + noise
+
+    # 3. Embed the "Head and Shoulders" pattern in a predefined location
+    pattern = all_reference_patterns['Original']
+    embed_start = 450
+    embed_end = embed_start + len(pattern)
+    asset_price[embed_start:embed_end] = pattern + asset_price[embed_start:embed_end]
+
+    # 4. Autoregressive Component
+    for i in range(1, len(asset_price)):
+        asset_price[i] += 0.4 * asset_price[i - 1]
+
+    # Convert to percentage change representation
+    asset_percentage_change = convert_to_difference(asset_price)
+    all_reference_percentage_change = {label: convert_to_difference(pattern) for label, pattern in
+                                       all_reference_patterns.items()}
+
+    return asset_price, asset_percentage_change, all_reference_percentage_change
+
+
+def generate_synthetic_data():
     # Generate synthetic data with embedded "Head and Shoulders" pattern
     np.random.seed(42)  # for reproducibility
 
@@ -60,32 +96,18 @@ def generate_synthetic_data_with_trend():
     noise = np.random.randn(1000)
 
     # Combine trend and noise
-    asset_price = trend + noise
+    asset_price = noise
 
     # Introduce the "Head and Shoulders" pattern
     embed_start = 450
     embed_end = embed_start + window_size
-    asset_price[embed_start:embed_end] += pattern
+    asset_price[embed_start:embed_end] = pattern
+    asset_price += trend + noise
 
     # Convert to percentage change representation
-    asset_percentage_change = convert_to_percentage_change(asset_price)
-    all_reference_percentage_change = {label: convert_to_percentage_change(pattern) for label, pattern in
+    asset_percentage_change = convert_to_difference(asset_price)
+    all_reference_percentage_change = {label: convert_to_difference(pattern) for label, pattern in
                                        all_reference_patterns.items()}
 
     return asset_price, asset_percentage_change, all_reference_percentage_change
 
-
-def generate_synthetic_data():
-    # Generate synthetic data with embedded "Head and Shoulders" pattern
-    np.random.seed(42)  # for reproducibility
-    asset_price = np.random.randn(1000)
-    embed_start = 450
-    embed_end = embed_start + len(generate_accurate_head_and_shoulders())
-    asset_price[embed_start:embed_end] = generate_accurate_head_and_shoulders()
-
-    # Convert Stock E and all reference patterns to the percentage change representation
-    asset_percentage_change = convert_to_percentage_change(asset_price)
-    all_reference_percentage_change = {label: convert_to_percentage_change(pattern) for label, pattern in
-                                       all_reference_patterns.items()}
-
-    return asset_price, asset_percentage_change, all_reference_percentage_change
